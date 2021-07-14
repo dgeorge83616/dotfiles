@@ -1,15 +1,19 @@
 " Dan George
 "{{{Auto Commands
-" call flake8 for python files
 autocmd BufNewFile,BufRead *.py set ft=python
 " This seemed slick, but I'm making too many changes and it is annoying
 "autocmd BufWritePost $MYVIMRC ++nested source $MYVIMRC
-autocmd BufWritePost *.py call Flake8()
 " Remove any trailing whitespace that is in the file
 autocmd BufRead,BufWrite * if ! &bin | silent! %s/\s\+$//ge | endif
+" Open git commit message in insert mode
+autocmd BufRead COMMIT_EDITMSG start
 "{{{Source files
 augroup Source
   au!
+"{{{Define templates
+  autocmd BufNewFile *.sh 0r ~/.vim/templates/bash.tpl | normal G
+  autocmd BufNewFile *.c,*.h,*.cc,*.cpp,*.hpp 0r ~/.vim/templates/C_copyright.tpl | normal G
+"}}}
 "{{{C, C++, and Python
   autocmd FileType c,cpp,python setl nu
   autocmd FileType c,cpp,python setl rnu
@@ -471,12 +475,15 @@ endif
 "}}}
 "{{{Ale
 let g:ale_set_loclist = 0
-let g:ale_linters_ignore = ['ccls', 'cppcheck', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++', 'clang', 'clangd']
-let g:ale_fixers = {'cpp': ['astyle', 'clangtidy', 'remove_trailing_lines', 'trim_whitespace', 'uncrustify']}
+let g:ale_linters_ignore = ['ccls', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++', 'clang-check']
+let g:ale_fixers = {
+\'cpp': ['astyle', 'clangtidy', 'remove_trailing_lines', 'trim_whitespace', 'uncrustify'],
+\'python': ['add_blank_lines_for_python_control_statements', 'autoimport', 'autopep8', 'black', 'isort', 'remove_trailing_lines', 'reorder-python-imports', 'trim_whitespace']
+\}
 let g:ale_c_astyle_project_options = 'project=.astylerc'
 let g:ale_cpp_cpplint_options = '--filter=-build/include_subdir,-build/include_order,-whitespace/tab,-readability/cast,-whitespace/braces'
 let g:airline#extensions#ale#enable = 1
 let g:ale_cmake_cmakelint_options = '--config=.cmakelintrc'
 "}}}
 set modelines=1
-" vim:foldmethod=marker:foldlevel=0:nowrap:ts=2:sw=2:sts=2:et:
+" vim:foldmethod=marker:foldlevel=0:tw=0:ts=2:sw=2:sts=2:et:
