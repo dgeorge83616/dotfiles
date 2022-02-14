@@ -7,36 +7,57 @@ autocmd BufNewFile,BufRead *.py set ft=python
 autocmd BufRead,BufWrite * if ! &bin | silent! %s/\s\+$//ge | endif
 " Open git commit message in insert mode
 autocmd BufRead COMMIT_EDITMSG start
+" Define a notes type for model notes
+" This doesn't work and I don't know why
+"autocmd BufNewFile,BufRead *-notes.txt setf notes
+"augroup Notes
+  "au!
+  "autocmd FileType notes setl nonumber
+  "autocmd FileType notes setl norelativenumber
+  "autocmd FileType notes setl textwidth=80
+  "autocmd FileType notes setl wrapmargin=8
+"augroup END
 "{{{Source files
 augroup Source
   au!
 "{{{Define templates
+" Need to change these so that alternate buf isn't the template file
   autocmd BufNewFile *.sh 0r ~/.vim/templates/bash.tpl | normal G
-  autocmd BufNewFile *.c,*.h,*.cc,*.cpp,*.hpp 0r ~/.vim/templates/C_copyright.tpl | normal G
+  " Too often accidentally open a new source file by typo
+  "autocmd BufNewFile *.c,*.h,*.cc,*.cpp,*.hpp 0r ~/.vim/templates/C_copyright.tpl | normal G
 "}}}
-"{{{C, C++, and Python
+"{{{Base
   autocmd FileType c,cpp,python setl nu
   autocmd FileType c,cpp,python setl rnu
   autocmd FileType c,cpp,python setl colorcolumn=100
+  autocmd FileType c,cpp setl foldmethod=syntax
+  autocmd FileType python setl foldmethod=indent
+  autocmd FileType cmake,make,sh setl nu
+  autocmd FileType cmake,make,sh setl rnu
+  autocmd FileType cmake,make,sh setl colorcolumn=80
+"}}}
+augroup SourceTabs
+  " Need to be able to overide these in project .vimrc files
+  au!
+"{{{C, C++, and Python
   autocmd FileType c,cpp setl expandtab
   autocmd FileType c,cpp setl tabstop=4
   autocmd FileType c,cpp setl shiftwidth=4
   autocmd FileType c,cpp setl softtabstop=4
-  autocmd FileType c,cpp setl foldmethod=syntax
-  autocmd FileType python setl foldmethod=indent
   autocmd FileType python setl expandtab
   autocmd FileType python setl tabstop=4
   autocmd FileType python setl shiftwidth=4
   autocmd FileType python setl softtabstop=4
 "}}}
-"{{{Build files
-  autocmd FileType cmake,make setl nu
-  autocmd FileType cmake,make setl rnu
-  autocmd FileType cmake,make setl noexpandtab
-  autocmd FileType cmake,make setl tabstop=4
-  autocmd FileType cmake,make setl shiftwidth=4
-  autocmd FileType cmake,make setl softtabstop=4
-  autocmd FileType cmake,make setl colorcolumn=80
+"{{{Build files and shell scripts
+  autocmd FileType make          setl noexpandtab
+  autocmd FileType make          setl tabstop=8
+  autocmd FileType make          setl shiftwidth=8
+  autocmd FileType cmake,sh      setl softtabstop=8
+  autocmd FileType cmake,sh      setl expandtab
+  autocmd FileType cmake,sh      setl tabstop=4
+  autocmd FileType cmake,sh      setl shiftwidth=4
+  autocmd FileType cmake,sh      setl softtabstop=4
 "}}}
 augroup END
 "}}}
@@ -196,19 +217,6 @@ endif
 return
 endfunc
 "}}}
-"{{{ Todo List Mode
-
-function! TodoListMode()
-e ~/.todo.otl
-Calendar
-wincmd l
-set foldlevel=1
-tabnew ~/.notes.txt
-tabfirst
-" or 'norm! zMzr'
-endfunction
-
-"}}}
 "}}}
 "{{{ Mappings
 
@@ -287,7 +295,7 @@ nnoremap <C-l> <C-w>l
 "map n nzz
 
 " Testing
-set completeopt=longest,menuone,preview
+set completeopt=longest,menuone,popup
 
 inoremap <expr> <cr> pumvisible() ? "\<c-y>" : "\<c-g>u\<cr>"
 inoremap <expr> <c-n> pumvisible() ? "\<lt>c-n>" : "\<lt>c-n>\<lt>c-r>=pumvisible() ? \"\\<lt>down>\" : \"\"\<lt>cr>"
@@ -333,6 +341,10 @@ Plugin 'tpope/vim-surround'
 Plugin 'kien/rainbow_parentheses.vim'
 
 Plugin 'lifepillar/vim-solarized8'
+
+Plugin 'rhysd/vim-clang-format'
+"Plugin 'dpelle/vim-LanguageTool'
+
 call vundle#end() " required
 "}}}
 "{{{Color
@@ -381,27 +393,27 @@ nnoremap dou :diffget //3<CR>
 "let airline#extensions#syntastic#warning_symbol = 'W:'
 "let airline#extensions#syntastic#stl_format_warn = '%W{[%fw(#%w)]}'
 
-"let g:syntastic_always_populate_loc_list = 0
-"let g:syntastic_auto_loc_list = 1
-"let g:syntastic_check_on_open = 1
+let g:syntastic_aggregate_errors = 1
+let g:syntastic_always_populate_loc_list = 0
+let g:syntastic_auto_loc_list = 0
+let g:syntastic_check_on_open = 1
 "let g:syntastic_check_on_wq = 0
-"let g:syntastic_cpp_checkers = ['gcc']
-"let g:syntastic_c_checkers = ['gcc']
-"let g:syntastic_cpp_check_header = 1
+let g:syntastic_cmake_checkers = ['cmakelint']
+let g:syntastic_cpp_checkers = ['gcc'
+      \]
+let g:syntastic_c_checkers = ['gcc'
+      \]
+let g:syntastic_cpp_check_header = 1
 "let g:syntastic_c_config_file = '.syntastic_c'
 "let g:syntastic_cpp_config_file = '.syntastic_cpp'
-let g:syntastic_mode_map = {
-        \ "mode": "passive",
-        \ "active_filetypes": ['sh'],
-        \ "passive_filetypes": ['cmake', 'python']}
+"let g:syntastic_mode_map = {
+"  \"mode": "active",
+"  \"active_filetypes": ['sh'],
+"  \"passive_filetypes": ['cmake', 'python']
+" \}
 "}}}
 "{{{Ycm
-" PX4 code doesn't play nice with clang and YCM can't use gcc
-let g:ycm_show_diagnostics_ui = 1
-
 " Fallback to extra conf if no compile DB
-let g:ycm_extra_conf_globlist = ['~/projects/aidev/*']
-", '~/projects/aipx4', '~/projects/px4*',
 " GoTo mappings
 " Declaration
 " Definition
@@ -413,6 +425,10 @@ let g:ycm_extra_conf_globlist = ['~/projects/aidev/*']
 
 " Refactor mappings
 " FixIt
+
+let g:ycm_show_diagnostics_ui = 0
+let g:ycm_open_loclist_on_ycm_diags = 0
+
 "}}}
 "{{{Cscope
 if has("cscope")
@@ -475,10 +491,17 @@ endif
 "}}}
 "{{{Ale
 let g:ale_set_loclist = 0
-let g:ale_linters_ignore = ['ccls', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++', 'clang-check']
+let g:ale_linters_ignore = {
+\'yaml': ['speectrum']
+\,'cc': ['ccls', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++']
+\,'c': ['ccls', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++']
+\,'markdown': ['alex','languagetool']
+\}
 let g:ale_fixers = {
-\'cpp': ['astyle', 'clangtidy', 'remove_trailing_lines', 'trim_whitespace', 'uncrustify'],
-\'python': ['add_blank_lines_for_python_control_statements', 'autoimport', 'autopep8', 'black', 'isort', 'remove_trailing_lines', 'reorder-python-imports', 'trim_whitespace']
+\'cc': ['astyle', 'clangtidy', 'clang-format', 'remove_trailing_lines', 'trim_whitespace', 'uncrustify'],
+\'python': ['add_blank_lines_for_python_control_statements', 'autoimport', 'autopep8', 'black', 'isort', 'remove_trailing_lines', 'reorder-python-imports', 'trim_whitespace'],
+\'yaml': ['remove_trailing_lines', 'trim_whitespace', 'yamlfix'],
+\'make': ['remove_trailing_lines', 'trim_whitespace']
 \}
 let g:ale_c_astyle_project_options = 'project=.astylerc'
 let g:ale_cpp_cpplint_options = '--filter=-build/include_subdir,-build/include_order,-whitespace/tab,-readability/cast,-whitespace/braces'
