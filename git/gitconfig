@@ -7,5 +7,3 @@
 	submoduleSummary = false
 [remmote "px4"]
 	tagOpt = --no-tags
-[remote "px4"]
-	tagOpt = --no-tags

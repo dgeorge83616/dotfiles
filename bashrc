@@ -57,7 +57,7 @@ if [ -n "$force_color_prompt" ]; then
 fi
 
 if [ "$color_prompt" = yes ]; then
-    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
 else
     PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 fi
@@ -117,14 +117,24 @@ if ! shopt -oq posix; then
   fi
 fi
 
-alias qgc='QGroundControl.AppImage'
-
+export SIM_ROOT=~/ws
+export QTDIR=/opt/Qt/5.12.6/gcc_64
+if [[ ! -e ${QTDIR} ]]; then
+    export QTDIR=
+fi
 set -o vi
 export EDITOR=vim
 export VISUAL=vim
-export NIX_PATH=nixpkgs=/home/dan/projects/anduril-nixpkgs/
 export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+
+export CMAKE_GENERATOR=Ninja
+
+ulimit -c unlimited
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+export PATH=/usr/local/bin:/snap/bin:$PATH
+export PATH=$PATH:$SIM_ROOT/omen/vehicle/sim_cfg/scripts/omen_sim
+export PYTHONPATH=/usr/lib/python3/dist-packages/
+

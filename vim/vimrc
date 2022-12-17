@@ -6,7 +6,10 @@ autocmd BufNewFile,BufRead *.py set ft=python
 " Remove any trailing whitespace that is in the file
 autocmd BufRead,BufWrite * if ! &bin | silent! %s/\s\+$//ge | endif
 " Open git commit message in insert mode
-autocmd BufRead COMMIT_EDITMSG start
+autocmd BufRead COMMIT_EDITMSG {
+    setl spell
+    start
+  }
 " Define a notes type for model notes
 " This doesn't work and I don't know why
 "autocmd BufNewFile,BufRead *-notes.txt setf notes
@@ -88,6 +91,7 @@ autocmd BufWinEnter *
 augroup END"}}}
 "}}}
 "{{{Misc Settings
+set makeprg=ninja
 set nocompatible " necesary for lots of cool vim things
 set undofile
 set ruler
@@ -491,11 +495,12 @@ endif
 "}}}
 "{{{Ale
 let g:ale_set_loclist = 0
+let g:ale_linters = {'markdown': ['alex']}
 let g:ale_linters_ignore = {
 \'yaml': ['speectrum']
 \,'cc': ['ccls', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++']
 \,'c': ['ccls', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++']
-\,'markdown': ['alex','languagetool']
+\,'markdown': ['alex', 'languagetool']
 \}
 let g:ale_fixers = {
 \'cc': ['astyle', 'clangtidy', 'clang-format', 'remove_trailing_lines', 'trim_whitespace', 'uncrustify'],
