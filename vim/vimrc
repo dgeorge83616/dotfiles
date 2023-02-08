@@ -1,4 +1,5 @@
 " Dan George
+
 "{{{Auto Commands
 autocmd BufNewFile,BufRead *.py set ft=python
 " This seemed slick, but I'm making too many changes and it is annoying
@@ -7,9 +8,44 @@ autocmd BufNewFile,BufRead *.py set ft=python
 autocmd BufRead,BufWrite * if ! &bin | silent! %s/\s\+$//ge | endif
 " Open git commit message in insert mode
 autocmd BufRead COMMIT_EDITMSG {
-    setl spell
-    start
+  setl spell
+  start
   }
+
+source ~/.vim/bundle/vim-nix/ftdetect/nix.vim
+
+"{{{LSP
+"{{{asyncomplete
+" Use ALE's function for asyncomplete defaults
+au User asyncomplete_setup call asyncomplete#register_source(asyncomplete#sources#ale#get_source_options({
+    \ 'priority': 10,
+    \ }))
+
+function! s:on_lsp_buffer_enabled() abort
+  setlocal omnifunc=lsp#complete
+  setlocal signcolumn=yes
+  nmap <buffer> gd <plug>(lsp-definition)
+  nmap <buffer> <f2> <plug>(lsp-rename)
+endfunction
+
+augroup lsp_install
+  au!
+  autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
+augroup END
+"}}}
+
+" Register ccls C++ lanuage server.
+if executable('ccls')
+   au User lsp_setup call lsp#register_server({
+      \ 'name': 'ccls',
+      \ 'cmd': {server_info->['ccls']},
+      \ 'root_uri': {server_info->lsp#utils#path_to_uri(lsp#utils#find_nearest_parent_file_directory(lsp#utils#get_buffer_path(), 'compile_commands.json'))},
+      \ 'initialization_options': {'cache': {'directory': expand('~/.cache/ccls') }},
+      \ 'allowlist': ['c', 'cpp'],
+      \ })
+endif
+"}}}
+
 " Define a notes type for model notes
 " This doesn't work and I don't know why
 "autocmd BufNewFile,BufRead *-notes.txt setf notes
@@ -43,6 +79,8 @@ augroup SourceTabs
   " Need to be able to overide these in project .vimrc files
   au!
 "{{{C, C++, and Python
+  " Is it worth forcing .h to be c, instead of possibly c++?
+  "autocmd BufNewFile,BufRead *.h set ft=c
   autocmd FileType c,cpp setl expandtab
   autocmd FileType c,cpp setl tabstop=4
   autocmd FileType c,cpp setl shiftwidth=4
@@ -53,14 +91,11 @@ augroup SourceTabs
   autocmd FileType python setl softtabstop=4
 "}}}
 "{{{Build files and shell scripts
-  autocmd FileType make          setl noexpandtab
-  autocmd FileType make          setl tabstop=8
-  autocmd FileType make          setl shiftwidth=8
-  autocmd FileType cmake,sh      setl softtabstop=8
-  autocmd FileType cmake,sh      setl expandtab
-  autocmd FileType cmake,sh      setl tabstop=4
-  autocmd FileType cmake,sh      setl shiftwidth=4
-  autocmd FileType cmake,sh      setl softtabstop=4
+  autocmd FileType make       setlocal noexpandtab   shiftwidth=8   softtabstop=8   tabstop=8
+  autocmd FileType cmake,sh   setlocal   expandtab   shiftwidth=4   softtabstop=4   tabstop=4
+"}}}
+"{{{YAML files
+  autocmd FileType yaml   setlocal expandtab shiftwidth=2 softtabstop=2 tabstop=2
 "}}}
 augroup END
 "}}}
@@ -299,8 +334,6 @@ nnoremap <C-l> <C-w>l
 "map n nzz
 
 " Testing
-set completeopt=longest,menuone,popup
-
 inoremap <expr> <cr> pumvisible() ? "\<c-y>" : "\<c-g>u\<cr>"
 inoremap <expr> <c-n> pumvisible() ? "\<lt>c-n>" : "\<lt>c-n>\<lt>c-r>=pumvisible() ? \"\\<lt>down>\" : \"\"\<lt>cr>"
 inoremap <expr> <m-;> pumvisible() ? "\<lt>c-n>" : "\<lt>c-x>\<lt>c-o>\<lt>c-n>\<lt>c-p>\<lt>c-r>=pumvisible() ? \"\\<lt>down>\" : \"\"\<lt>cr>"
@@ -310,6 +343,8 @@ nnoremap <leader>par :%s/^>$//<CR>
 
 "}}}
 "{{{Plugins
+runtime! ftplugin/man.vim
+
 "set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
@@ -322,6 +357,8 @@ Plugin 'gmarik/Vundle.vim'
 " " plugin on GitHub repo
 Plugin 'tpope/vim-fugitive'
 Plugin 'tpope/vim-surround'
+
+Plugin 'LnL7/vim-nix'
 
 Plugin 'lifepillar/vim-solarized8'
 
@@ -338,20 +375,26 @@ Plugin 'nvie/vim-flake8'
 Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
 
+Plugin 'dense-analysis/ale'
 
+"{{{Asyncomplete
 " This set of plugins looks powerful but not enough documentation
-"Plugin 'prabirshrestha/vim-lsp'
+Plugin 'prabirshrestha/asyncomplete.vim'
+Plugin 'prabirshrestha/vim-lsp'
 "Plugin 'mattn/vim-lsp-settings'
-"Plugin 'prabirshrestha/asyncomplete.vim'
 "Plugin 'prabirshrestha/asyncomplete-lsp.vim'
+Plugin 'rhysd/vim-lsp-ale'
+"}}}
 
 Plugin 'editorconfig/editorconfig-vim'
 Plugin 'vim-syntastic/syntastic'
-Plugin 'dense-analysis/ale'
 Plugin 'kien/rainbow_parentheses.vim'
 
 
 Plugin 'rhysd/vim-clang-format'
+Plugin 'rhysd/vim-healthcheck'
+
+Plugin 'tom-doerr/vim_codex'
 
 call vundle#end() " required
 "}}}
@@ -407,18 +450,16 @@ let g:syntastic_auto_loc_list = 0
 let g:syntastic_check_on_open = 1
 "let g:syntastic_check_on_wq = 0
 let g:syntastic_cmake_checkers = ['cmakelint']
-let g:syntastic_cpp_checkers = ['gcc'
-      \]
-let g:syntastic_c_checkers = ['gcc'
-      \]
+let g:syntastic_cpp_checkers = ['g++']
+let g:syntastic_c_checkers = ['gcc']
 let g:syntastic_cpp_check_header = 1
-"let g:syntastic_c_config_file = '.syntastic_c'
-"let g:syntastic_cpp_config_file = '.syntastic_cpp'
-"let g:syntastic_mode_map = {
-"  \"mode": "active",
-"  \"active_filetypes": ['sh'],
-"  \"passive_filetypes": ['cmake', 'python']
-" \}
+let g:syntastic_c_config_file = '.syntastic_c'
+let g:syntastic_cpp_config_file = '.syntastic_cpp'
+let g:syntastic_mode_map = {
+  \'mode': 'active',
+  \'active_filetypes': ['sh'],
+  \'passive_filetypes': ['c', 'cpp', 'cmake', 'python']
+ \}
 "}}}
 "{{{Cscope
 if has("cscope")
@@ -479,31 +520,50 @@ if has("cscope")
 		\:vert scs find a <C-R>=expand("<cword>")<CR><CR>
 endif
 "}}}
+"{{{Asyncomplete
+let g:aynscomplete_log_file = './.asyncomplete'
+"}}}Asyncomplete
 "{{{Ale
-let g:ale_completion_enabled = 1
-let g:ale_set_loclist = 0
-let g:ale_linters = {'markdown': ['alex']}
+let g:ale_c_clangformat_use_local = 1
+let g:ale_completion_enabled = 0
+let g:ale_set_balloons = 1
+let g:ale_set_loclist = 1
+let s:c_linters_ignore = [ 'clangd', 'clang++', 'cppcheck', 'cquery', 'clazy', 'flawfinder' ]
 let g:ale_linters_ignore = {
-\'yaml': ['speectrum']
-\,'cc': ['ccls', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++']
-\,'cpp': ['ccls', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++']
-\,'c': ['ccls', 'cquery', 'flawfinder', 'clazy-standalone', 'clang++']
-\,'markdown': ['alex', 'languagetool']
+      \'cpp': s:c_linters_ignore,
+      \'c'  : s:c_linters_ignore
 \}
+unlet s:c_linters_ignore
 let g:ale_fixers = {
-\'cc': ['astyle', 'clangtidy', 'clang-format', 'remove_trailing_lines', 'trim_whitespace', 'uncrustify'],
-\'python': ['add_blank_lines_for_python_control_statements', 'autoimport', 'autopep8', 'black', 'isort', 'remove_trailing_lines', 'reorder-python-imports', 'trim_whitespace'],
-\'yaml': ['remove_trailing_lines', 'trim_whitespace', 'yamlfix'],
-\'make': ['remove_trailing_lines', 'trim_whitespace']
+      \'*': ['remove_trailing_lines', 'trim_whitespace'],
+      \'c': [ 'clang-format', 'clangtidy'],
+      \'cpp': [ 'clang-format', 'clangtidy'],
+      \'python': ['add_blank_lines_for_python_control_statements', 'autoimport', 'autopep8', 'black', 'isort', 'reorder-python-imports'],
+      \'yaml': ['remove_trailing_lines', 'trim_whitespace', 'yamlfix'],
 \}
-let g:ale_c_astyle_project_options = 'project=.astylerc'
-let g:ale_cpp_cpplint_options = '--filter=-build/include_subdir,-build/include_order,-whitespace/tab,-readability/cast,-whitespace/braces'
 let g:airline#extensions#ale#enable = 1
 let g:ale_cmake_cmakelint_options = '--config=.cmakelintrc'
+"{{{cppcheck
+"yoy can create a misra.json file that lists references licensed messages file to get
+"descriptive error messages
+let s:cppcheck_options = ''
+if filereadable('misra.json')
+  let s:cppcheck_options .= ' --addon=misra.json'
+elseif filereadable('misra.py')
+  let s:cppcheck_options .= ' --addon=misra.py'
+endif
+let g:ale_c_cppcheck_options = s:cppcheck_options
+let g:ale_cpp_cppcheck_options = s:cppcheck_options
+unlet s:cppcheck_options
+"}}}cppcheck
+
+"Cspell uses cpp dictionary for both C/C++
+let g:ale_cspell_options = '--language-id cpp'
 
 "set completeopt=menu,menuone,preview,noselect,noinsert
 "set completeopt=menu,menuone,popup,noselect,noinsert
-set omnifunc=ale#completion#OmniFunc
+set completeopt=longest,menuone,popup
+"set omnifunc=ale#completion#OmniFunc
 function! SmartInsertCompletion() abort
   " Use the default CTRL-N in completion menus
   if pumvisible()
@@ -515,6 +575,6 @@ function! SmartInsertCompletion() abort
 endfunction
 
 inoremap <silent> <C-n> <C-R>=SmartInsertCompletion()<CR>
-"}}}
+"}}}Ale
 set modelines=1
 " vim:foldmethod=marker:foldlevel=0:tw=0:ts=2:sw=2:sts=2:et:
