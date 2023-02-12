@@ -1,0 +1,4 @@
+https://git::@github.com/tmux-plugins/tmux-sensible
+https://github.com/tmux-plugins/tpm
+https://git::@github.com/christoomey/vim-tmux-navigator
+https://github.com/christoomey/vim-tmux-navigator.git
