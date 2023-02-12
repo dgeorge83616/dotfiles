@@ -1,9 +1,2 @@
-[user]
-	name = Dan George
-	email = dgeorge@anduril.com
 [core]
 	editor = vim
-[status]
-	submoduleSummary = false
-[remmote "px4"]
-	tagOpt = --no-tags
